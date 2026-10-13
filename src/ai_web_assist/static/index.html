@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/static/vendor/github.min.css" media="(prefers-color-scheme: light)" id="hlLight">
+<link rel="stylesheet" href="/static/vendor/github-dark.min.css" media="(prefers-color-scheme: dark)" id="hlDark">
+<link rel="stylesheet" href="/static/app.css">
+<script src="/static/boot.js"></script>
+<script src="/static/vendor/marked.umd.js" defer></script>
+<script src="/static/vendor/purify.min.js" defer></script>
+<script src="/static/vendor/highlight.min.js" defer></script>
+<script src="/static/vendor/scala.min.js" defer></script>
+<script src="/static/vendor/dockerfile.min.js" defer></script>
+<script src="/static/app.js" defer></script>
+</head>
+<body>
+<aside>
+  <header>
+    <h1 title="{{TITLE}}">{{TITLE}}</h1>
+    <button class="icon" id="gearBtn" title="Settings" aria-label="Settings" aria-expanded="false" aria-controls="settings">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <div class="settings" id="settings" hidden>
+      <label>Font size</label>
+      <div class="seg" id="fontSeg"><button data-v="1rem">Small</button><button data-v="1.1rem">Medium</button><button data-v="1.2rem">Large</button></div>
+      <label>Theme</label>
+      <div class="seg" id="themeSeg"><button data-v="system">System</button><button data-v="light">Light</button><button data-v="dark">Dark</button></div>
+      <p class="hint">Drag the chat's left border, or the top border of the message box, to resize. Double-click a border to reset.</p>
+    </div>
+  </header>
+  <nav id="tree" aria-label="Files"></nav>
+</aside>
+<main>
+  <div class="path" id="path"></div>
+  <article class="md" id="doc"><p class="notice">Loading…</p></article>
+</main>
+<section aria-label="Chat">
+  <div class="resizer" id="resizer" title="Drag to resize, double-click to reset"></div>
+  <div class="chat-head"><span>Chat with Claude</span><button id="newBtn" title="Start a fresh Claude session (files are kept)">New session</button></div>
+  <div id="msgs" aria-live="polite"></div>
+  <form id="form">
+    <div class="hresizer" id="hresizer" title="Drag to resize the input, double-click to reset"></div>
+    <textarea id="input" placeholder="Ask or answer… (Enter to send, Shift+Enter for a new line)" aria-label="Message"></textarea>
+    <div class="row"><span id="status"></span><span><button type="button" id="stopBtn" disabled>Stop</button> <button class="primary" id="sendBtn">Send</button></span></div>
+  </form>
+</section>
+</body>
+</html>
