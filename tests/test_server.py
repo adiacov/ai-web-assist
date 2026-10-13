@@ -1,4 +1,8 @@
 import json
+import os
+import socket
+import threading
+import time
 
 # --- US1: workspace, static files, read APIs, request guards ---------------------------------
 
@@ -89,3 +93,118 @@ def test_bad_json_body(server):
     resp, raw = server.request("POST", "/api/chat", headers={"Content-Type": "application/json"})
     assert resp.status == 400
     assert json.loads(raw)["error"]
+
+
+# --- US2: chat streaming -----------------------------------------------------------------------
+
+
+def wait_for(cond, timeout=5.0):
+    end = time.time() + timeout
+    while time.time() < end:
+        if cond():
+            return True
+        time.sleep(0.02)
+    return False
+
+
+def is_busy(server):
+    return server.get_json("/api/history")[1]["busy"]
+
+
+def test_chat_streams_and_saves(server, fake_claude, project):
+    (project / "a.md").write_text("hello")
+    status, events = server.chat("-- read a.md, \"quoted\"\nsecond line")
+    assert status == 200
+    kinds = [e["t"] for e in events]
+    assert kinds[-1] == "done" and "error" not in kinds
+    assert {"t": "tool", "name": "Read", "summary": "a.md"} in events
+    text = "".join(e["v"] for e in events if e["t"] == "text")
+    assert text == 'The file a.md contains a single word: "hello".'
+
+    call = fake_claude.calls()[0]
+    assert call["stdin"] == "-- read a.md, \"quoted\"\nsecond line"
+    assert all("read a.md" not in arg for arg in call["argv"])
+    assert call["cwd"] == str(project)
+    assert "--resume" not in call["argv"]
+
+    history = server.get_json("/api/history")[1]
+    assert [m["role"] for m in history["messages"]] == ["user", "assistant"]
+    assert history["messages"][1]["text"] == text
+    assert history["messages"][1]["tools"] == [{"name": "Read", "summary": "a.md"}]
+    assert history["session_id"] and history["busy"] is False
+
+
+def test_chat_empty_message(server, fake_claude):
+    status, body = server.chat("   ")
+    assert status == 400 and body["error"]
+
+
+def test_chat_one_at_a_time(server, fake_claude):
+    fake_claude.set(delay=0.05)
+    t = threading.Thread(target=server.chat, args=("first",))
+    t.start()
+    assert wait_for(lambda: is_busy(server))
+    status, body = server.chat("second")
+    assert status == 409 and "working" in body["error"]
+    t.join(10)
+    assert not is_busy(server)
+
+
+def test_chat_stop_kills_process_group(server, fake_claude):
+    fake_claude.set(delay=0.3, child=1)
+    result = {}
+    t = threading.Thread(target=lambda: result.update(r=server.chat("long task")))
+    t.start()
+    assert wait_for(lambda: fake_claude.calls())
+    assert server.post("/api/stop")[0].status == 200
+    t.join(10)
+    assert not t.is_alive()
+    status, events = result["r"]
+    assert events[-1] == {"t": "done"}
+    assert any(e["t"] == "error" and "Stopped" in e["v"] for e in events)
+
+    child = fake_claude.calls()[0]["child_pid"]
+
+    def child_gone():
+        try:
+            os.kill(child, 0)
+        except ProcessLookupError:
+            return True
+        with open(f"/proc/{child}/stat") as f:  # a zombie waiting to be reaped counts as gone
+            return f.read().split()[2] == "Z"
+    assert wait_for(child_gone)
+    roles = [m["role"] for m in server.get_json("/api/history")[1]["messages"]]
+    assert roles[0] == "user" and "error" in roles
+
+
+def test_chat_claude_failure(server, fake_claude):
+    fake_claude.set(stream="", exit=1, stderr="Error: not logged in")
+    status, events = server.chat("hi")
+    assert status == 200
+    errors = [e["v"] for e in events if e["t"] == "error"]
+    assert errors and "not logged in" in errors[0]
+    assert events[-1] == {"t": "done"}
+    roles = [m["role"] for m in server.get_json("/api/history")[1]["messages"]]
+    assert roles == ["user", "error"]  # no empty assistant message
+
+
+def test_chat_survives_client_disconnect(server, fake_claude):
+    fake_claude.set(delay=0.03)
+    body = b'{"message": "hi"}'
+    s = socket.create_connection(("127.0.0.1", server.port))
+    s.sendall(b"POST /api/chat HTTP/1.1\r\nHost: 127.0.0.1:%d\r\nContent-Type: application/json\r\n"
+              b"Content-Length: %d\r\n\r\n%s" % (server.port, len(body), body))
+    assert s.recv(100)  # response started
+    s.close()
+    assert wait_for(lambda: not is_busy(server) and len(server.get_json("/api/history")[1]["messages"]) == 2, 10)
+    reply = server.get_json("/api/history")[1]["messages"][1]
+    assert reply["text"].startswith("The file a.md")
+
+
+def test_chat_unknown_session_explains(server, fake_claude):
+    from conftest import FIXTURES
+    fake_claude.set(stream=FIXTURES / "stream_bad_resume.jsonl", exit=1,
+                    stderr="No conversation found with session ID: 0000")
+    status, events = server.chat("hi")
+    errors = " | ".join(e["v"] for e in events if e["t"] == "error")
+    assert "No conversation found" in errors and "New session" in errors

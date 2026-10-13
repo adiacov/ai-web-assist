@@ -9,8 +9,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
+from typing import Callable
+
 from ai_web_assist import __version__
+from ai_web_assist.claude import ClaudeRunner, StreamParser, build_command
 from ai_web_assist.files import Workspace
+from ai_web_assist.prompt import build_prompt
 from ai_web_assist.state import ChatStore
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -33,10 +37,59 @@ class App:
     def __init__(self, workspace: Workspace, store: ChatStore):
         self.workspace = workspace
         self.store = store
+        self.system_prompt = build_prompt(workspace.config)
         self.chat_lock = threading.Lock()
+        self.runner: ClaudeRunner | None = None
+
+    def stop(self) -> None:
+        runner = self.runner
+        if runner is not None:
+            runner.stop()
 
     def shutdown(self) -> None:
-        """Stop any running work (overridden behaviour is added with the chat)."""
+        self.stop()
+
+    def run_chat(self, message: str, emit: Callable[[dict], None]) -> None:
+        """Run one Claude turn, streaming UI events to `emit`. The caller holds `chat_lock`."""
+        self.store.append("user", message)
+        session_id = self.store.load()["session_id"]
+        parser = StreamParser(self.workspace)
+        runner = ClaudeRunner(build_command(self.workspace.config, session_id, self.system_prompt),
+                              self.workspace.root, self.store.stderr_path)
+        self.runner = runner
+        errors: list[str] = []
+        try:
+            runner.start(message)
+            for line in runner.lines():
+                for event in parser.feed_line(line):
+                    if event["t"] == "error":
+                        errors.append(event["v"])
+                    emit(event)
+                if parser.session_id and parser.session_id != session_id:
+                    session_id = parser.session_id
+                    self.store.set_session(session_id)  # saved at once, so a crash still resumes
+            code = runner.wait()
+        except OSError as e:
+            code = None
+            errors.append(f"Could not run claude: {e}")
+            emit({"t": "error", "v": errors[-1]})
+        finally:
+            self.runner = None
+
+        late_error = None
+        if runner.stopped:
+            late_error = "Stopped."
+        elif code not in (0, None):
+            late_error = runner.stderr_tail() or (None if errors else f"claude exited with code {code}")
+            if late_error and "No conversation found" in late_error:
+                late_error += "\nThe saved Claude session no longer exists. Click New session to start fresh."
+        if late_error:
+            errors.append(late_error)
+            emit({"t": "error", "v": late_error})
+        if parser.text or parser.tools:
+            self.store.append("assistant", parser.text, parser.tools)
+        for error in errors:
+            self.store.append("error", error)
 
 
 def make_server(app: App, port: int) -> ThreadingHTTPServer:
@@ -158,7 +211,39 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_error_json(404, "not found")
         getattr(self, route)(data)
 
-    POST_ROUTES = {"/api/stop": "post_stop"}
+    POST_ROUTES = {"/api/chat": "post_chat", "/api/stop": "post_stop"}
+
+    def post_chat(self, data: dict) -> None:
+        message = data.get("message")
+        if not isinstance(message, str) or not message.strip():
+            return self.send_error_json(400, "empty message")
+        if not self.app.chat_lock.acquire(blocking=False):
+            return self.send_error_json(409, "Claude is still working on the previous message")
+        try:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/x-ndjson")
+            self._common_headers()
+            self.end_headers()
+            connected = True
+
+            def emit(event: dict) -> None:
+                nonlocal connected
+                if not connected:
+                    return  # browser went away; Claude keeps going so the files stay consistent
+                try:
+                    self.wfile.write((json.dumps(event) + "\n").encode())
+                    self.wfile.flush()
+                except OSError:
+                    connected = False
+
+            try:
+                self.app.run_chat(message, emit)
+            except Exception as e:  # never leave the browser waiting without an answer
+                emit({"t": "error", "v": f"Internal error: {e}"})
+            emit({"t": "done"})
+        finally:
+            self.app.chat_lock.release()
 
     def post_stop(self, data: dict) -> None:
+        self.app.stop()
         self.send_json({"ok": True})

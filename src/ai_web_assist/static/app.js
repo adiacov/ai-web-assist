@@ -239,6 +239,124 @@ function defaultFile() {
   return (files.find((f) => isMarkdown(f.path)) || files[0])?.path || null;
 }
 
+// ---- chat ----
+let busy = false;
+
+const nearBottom = () => { const m = $("msgs"); return m.scrollHeight - m.scrollTop - m.clientHeight < 80; };
+const scrollChat = (force = false) => { if (force || nearBottom()) $("msgs").scrollTop = $("msgs").scrollHeight; };
+
+function addMsg(role, text, tools = []) {
+  const div = document.createElement("div");
+  div.className = "msg " + role;
+  if (role === "assistant") {
+    div.innerHTML = `<div class="tools"></div><div class="md"></div>`;
+    tools.forEach((t) => addTool(div, t));
+    setAssistantText(div, text, true);
+  } else {
+    div.textContent = text;
+  }
+  $("msgs").appendChild(div);
+  scrollChat(true);
+  return div;
+}
+
+function addTool(div, t) {
+  const el = document.createElement("div");
+  el.className = "tool";
+  el.innerHTML = `<b></b> <span></span>`;
+  el.querySelector("b").textContent = t.name;
+  el.querySelector("span").textContent = t.summary;
+  el.title = `${t.name} ${t.summary}`;
+  div.querySelector(".tools").appendChild(el);
+}
+
+function setAssistantText(div, text, final = false) {
+  const m = div.querySelector(".md");
+  if (!text) { m.innerHTML = final ? "" : `<span class="working">working…</span>`; return; }
+  m.innerHTML = renderMarkdown(text);
+  highlightBlocks(m);
+  linkify(m);
+}
+
+// Re-render streamed markdown at most once per frame.
+function textRenderer(div) {
+  let pending = null;
+  return (text) => {
+    if (pending !== null) { pending = text; return; }
+    pending = text;
+    requestAnimationFrame(() => { const stick = nearBottom(); setAssistantText(div, pending); pending = null; if (stick) scrollChat(true); });
+  };
+}
+
+function setBusy(b, note = "") {
+  busy = b;
+  $("sendBtn").disabled = b; $("stopBtn").disabled = !b; $("newBtn").disabled = b;
+  $("status").textContent = note || (b ? "Claude is working…" : "");
+}
+
+async function readEvents(response, onEvent) {
+  const reader = response.body.getReader(), decoder = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let i;
+    while ((i = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, i); buf = buf.slice(i + 1);
+      if (line.trim()) onEvent(JSON.parse(line));
+    }
+  }
+}
+
+async function send(message) {
+  const userDiv = addMsg("user", message);
+  const div = addMsg("assistant", "");
+  setAssistantText(div, "");
+  setBusy(true);
+  const render = textRenderer(div);
+  let text = "", toolCount = 0;
+  try {
+    const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message }) });
+    if (!r.ok) {
+      let err = r.statusText;
+      try { err = (await r.json()).error || err; } catch {}
+      userDiv.remove(); div.remove();
+      if (!$("input").value) $("input").value = message;  // nothing was sent: give the text back
+      throw new Error(err);
+    }
+    await readEvents(r, (ev) => {
+      if (ev.t === "text") { text += ev.v; render(text); }
+      else if (ev.t === "tool") { toolCount++; addTool(div, ev); scrollChat(); }
+      else if (ev.t === "error") addMsg("error", ev.v);
+    });
+  } catch (e) {
+    addMsg("error", String(e.message || e));
+  }
+  if (div.isConnected) {
+    if (!text && !toolCount) div.remove();
+    else setTimeout(() => setAssistantText(div, text, true), 0);
+  }
+  setBusy(false);
+  refreshTree();
+}
+
+$("form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const v = $("input").value;
+  if (!v.trim() || busy) return;
+  $("input").value = "";
+  send(v);
+});
+$("input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("form").requestSubmit(); }
+});
+$("stopBtn").addEventListener("click", () => fetch("/api/stop", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }));
+
+async function initChat() {
+  $("input").focus();
+}
+
 // ---- start-up ----
 async function init() {
   const cfg = await (await fetch("/api/config")).json();
