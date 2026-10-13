@@ -22,11 +22,11 @@ filtering, config loading and stream parsing, with a fake `claude` for chat test
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 Create `pyproject.toml` (hatchling build backend; name `ai-web-assist`; version `0.1.0`; `requires-python = ">=3.11"`; no dependencies; `[project.scripts]` `awa` and `ai-web-assist` → `ai_web_assist.cli:main`; `[dependency-groups] dev = ["pytest>=8"]`; pytest `testpaths = ["tests"]`)
-- [ ] T002 [P] Create package skeleton `src/ai_web_assist/__init__.py` (`__version__ = "0.1.0"`) and `src/ai_web_assist/__main__.py` (calls `cli.main()`)
-- [ ] T003 [P] Extend `.gitignore` with `.venv/`, `__pycache__/`, `*.egg-info/`, `dist/`, `build/`, `.pytest_cache/`
-- [ ] T004 [P] Vendor front-end libs into `src/ai_web_assist/static/vendor/`: `marked.umd.js` (marked 18.0.14), `purify.min.js` (dompurify 3.4.16), `highlight.min.js` + `scala.min.js` + `dockerfile.min.js` + `github.min.css` + `github-dark.min.css` (@highlightjs/cdn-assets 11.12.0), and a `LICENSES.md` naming each version and license
-- [ ] T005 [P] Add `LICENSE` (MIT) at the repo root
+- [X] T001 Create `pyproject.toml` (hatchling build backend; name `ai-web-assist`; version `0.1.0`; `requires-python = ">=3.11"`; no dependencies; `[project.scripts]` `awa` and `ai-web-assist` → `ai_web_assist.cli:main`; `[dependency-groups] dev = ["pytest>=8"]`; pytest `testpaths = ["tests"]`)
+- [X] T002 [P] Create package skeleton `src/ai_web_assist/__init__.py` (`__version__ = "0.1.0"`) and `src/ai_web_assist/__main__.py` (calls `cli.main()`)
+- [X] T003 [P] Extend `.gitignore` with `.venv/`, `__pycache__/`, `*.egg-info/`, `dist/`, `build/`, `.pytest_cache/`
+- [X] T004 [P] Vendor front-end libs into `src/ai_web_assist/static/vendor/`: `marked.umd.js` (marked 18.0.14), `purify.min.js` (dompurify 3.4.16), `highlight.min.js` + `scala.min.js` + `dockerfile.min.js` + `github.min.css` + `github-dark.min.css` (@highlightjs/cdn-assets 11.12.0), and a `LICENSES.md` naming each version and license
+- [X] T005 [P] Add `LICENSE` (MIT) at the repo root
 
 ---
 

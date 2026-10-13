@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ai-web-assist"
+version = "0.1.0"
+description = "Chat with Claude Code beside your project's files, in a local browser workspace."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = []
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Environment :: Web Environment",
+    "Operating System :: POSIX",
+]
+
+[project.scripts]
+awa = "ai_web_assist.cli:main"
+ai-web-assist = "ai_web_assist.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ai_web_assist"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
