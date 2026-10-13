@@ -389,8 +389,76 @@ async function initChat() {
   $("input").focus();
 }
 
+// ---- display settings (global for all projects, saved per browser) ----
+const rootEl = document.documentElement;
+
+function markOn(segId, v) { $(segId).querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.v === v)); }
+
+function applyFont(v) {
+  rootEl.style.setProperty("--fs", v); storage.set(gkey("fontSize"), v); markOn("fontSeg", v);
+}
+
+function applyTheme(v) {
+  if (v === "system") rootEl.removeAttribute("data-theme"); else rootEl.setAttribute("data-theme", v);
+  $("hlLight").media = v === "system" ? "(prefers-color-scheme: light)" : v === "light" ? "all" : "not all";
+  $("hlDark").media = v === "system" ? "(prefers-color-scheme: dark)" : v === "dark" ? "all" : "not all";
+  storage.set(gkey("theme"), v); markOn("themeSeg", v);
+}
+
+function applySize(cssVar, key, px) {
+  if (px) { rootEl.style.setProperty(cssVar, px + "px"); storage.set(gkey(key), String(px)); }
+  else { rootEl.style.removeProperty(cssVar); storage.del(gkey(key)); }
+}
+const applyChatWidth = (px) => applySize("--chat-w", "chatWidth", px);
+const applyInputHeight = (px) => applySize("--input-h", "inputHeight", px);
+
+function toggleSettings(open) {
+  $("settings").hidden = !open; $("gearBtn").setAttribute("aria-expanded", String(open));
+}
+
+// Drag a border: `onMove(event, start)` gets the pointer event and the values captured at pointerdown.
+function dragResize(handle, bodyClass, start, onMove) {
+  handle.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    document.body.classList.add(bodyClass);
+    const s = start(e);
+    const move = (ev) => onMove(ev, s);
+    const up = () => {
+      document.body.classList.remove(bodyClass);
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", up);
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", up);
+  });
+}
+
+function initSettings() {
+  applyFont(storage.get(gkey("fontSize")) || "1.1rem");
+  applyTheme(storage.get(gkey("theme")) || "system");
+  $("fontSeg").addEventListener("click", (e) => { if (e.target.dataset.v) applyFont(e.target.dataset.v); });
+  $("themeSeg").addEventListener("click", (e) => { if (e.target.dataset.v) applyTheme(e.target.dataset.v); });
+  $("gearBtn").addEventListener("click", (e) => { e.stopPropagation(); toggleSettings($("settings").hidden); });
+  document.addEventListener("click", (e) => { if (!$("settings").hidden && !$("settings").contains(e.target)) toggleSettings(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") toggleSettings(false); });
+
+  dragResize($("resizer"), "resizing", () => null, (ev) => {
+    const max = window.innerWidth - 260 - 320;  // keep room for the file tree and the viewer
+    applyChatWidth(Math.round(Math.min(Math.max(window.innerWidth - ev.clientX, 300), max)));
+  });
+  $("resizer").addEventListener("dblclick", () => applyChatWidth(0));
+
+  dragResize($("hresizer"), "resizing-h", (e) => ({ y: e.clientY, h: $("input").offsetHeight }), (ev, s) => {
+    const max = $("msgs").offsetHeight + $("input").offsetHeight - 120;  // keep some messages visible
+    applyInputHeight(Math.round(Math.min(Math.max(s.h + s.y - ev.clientY, 50), max)));
+  });
+  $("hresizer").addEventListener("dblclick", () => applyInputHeight(0));
+}
+
 // ---- start-up ----
 async function init() {
+  initSettings();
   const cfg = await (await fetch("/api/config")).json();
   workspaceId = cfg.workspace_id; title = cfg.title;
   expanded = new Set(storage.json(wkey("expanded"), []));

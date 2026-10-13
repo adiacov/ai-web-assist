@@ -113,7 +113,7 @@ filtering, config loading and stream parsing, with a fake `claude` for chat test
 
 **Independent Test**: manual: change settings, reload, the settings persist; double-click resets.
 
-- [ ] T032 [US5] Add the settings popover logic to `src/ai_web_assist/static/app.js` (theme system/light/dark with hljs stylesheet switching, font small/medium/large, chat width resizer, input height resizer, double-click reset, Escape/outside click closes) using global (non-workspace) storage keys
+- [X] T032 [US5] Add the settings popover logic to `src/ai_web_assist/static/app.js` (theme system/light/dark with hljs stylesheet switching, font small/medium/large, chat width resizer, input height resizer, double-click reset, Escape/outside click closes) using global (non-workspace) storage keys
 
 **Checkpoint**: commit `feat(us5): display settings`
 
