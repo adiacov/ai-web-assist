@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ai-web-assist"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Chat with Claude Code beside your project's files, in a local browser workspace."
 readme = "README.md"
 license = "MIT"
@@ -22,6 +22,9 @@ ai-web-assist = "ai_web_assist.cli:main"
 
 [dependency-groups]
 dev = ["pytest>=8"]
+
+[tool.hatch.version]
+path = "src/ai_web_assist/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ai_web_assist"]
