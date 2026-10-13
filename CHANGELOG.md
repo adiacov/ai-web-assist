@@ -6,6 +6,11 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Changed
+
+- `main` only holds released code (development happens on `dev`), so installing from the
+  repository without a version gets the latest release. Releases must be tagged on `main`.
+
 ## [0.2.0] - 2026-10-13
 
 ### Added

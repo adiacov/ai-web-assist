@@ -28,8 +28,9 @@ uv tool install git+https://github.com/adiacov/ai-web-assist
 pipx install git+https://github.com/adiacov/ai-web-assist
 ```
 
-This installs the latest code on `main` and two identical commands: `awa` and `ai-web-assist`.
-To install a released version instead (recommended), see [Versions and updates](#versions-and-updates).
+This installs the latest release (the `main` branch only ever holds released code) and two
+identical commands: `awa` and `ai-web-assist`. To install a specific version, see
+[Versions and updates](#versions-and-updates).
 
 ## Usage
 
@@ -161,6 +162,7 @@ Display settings (theme, font, panel sizes, last open file) are saved in your br
 
 ```bash
 git clone https://github.com/adiacov/ai-web-assist && cd ai-web-assist
+git switch dev                   # all work happens on dev; main only gets releases
 uv run --group dev pytest        # tests (use a fake `claude`; no network, no account needed)
 uv run awa                       # run from the checkout
 uv tool install --force --reinstall .   # install your local version
@@ -168,15 +170,19 @@ uv tool install --force --reinstall .   # install your local version
 
 ### Releasing (maintainer)
 
-1. Set the new version in `src/ai_web_assist/__init__.py` (the only place it is defined;
-   use [Semantic Versioning](https://semver.org)).
+Branches: work is committed to `dev` (directly or through pull requests into `dev`). `main` only
+moves when a release is made, so a plain install from `main` is always the latest release.
+
+1. On `dev`, set the new version in `src/ai_web_assist/__init__.py` (the only place it is
+   defined; use [Semantic Versioning](https://semver.org)).
 2. In `CHANGELOG.md`, move the `Unreleased` notes into a new `## [X.Y.Z] - YYYY-MM-DD` section
    and update the compare links at the bottom.
-3. Commit on `main`: `git commit -am "release: vX.Y.Z"`.
-4. Tag and push: `git tag vX.Y.Z && git push origin main vX.Y.Z`.
+3. Commit and push `dev`, and wait for CI to pass: `git commit -am "release: vX.Y.Z" && git push`.
+4. Move `main` to it, tag, and push both:
+   `git switch main && git merge --ff-only dev && git tag vX.Y.Z && git push origin main vX.Y.Z && git switch dev`.
 
-The [Release workflow](.github/workflows/release.yml) then checks that the tag matches the
-version, runs the tests, builds the wheel and sdist, and publishes the GitHub release with that
+The [Release workflow](.github/workflows/release.yml) then checks that the tagged commit is on
+`main` and that the tag matches the version, runs the tests, builds the wheel and sdist, and publishes the GitHub release with that
 version's changelog section as notes. If any step fails, nothing is published: fix it, delete
 the tag (`git push --delete origin vX.Y.Z && git tag -d vX.Y.Z`) and tag again. Tests also run
 on every push and pull request ([CI workflow](.github/workflows/ci.yml)).
