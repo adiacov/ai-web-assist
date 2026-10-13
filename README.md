@@ -55,7 +55,8 @@ Tips:
 ## Versions and updates
 
 Releases are tagged `vX.Y.Z` and listed on the
-[releases page](https://github.com/adiacov/ai-web-assist/releases); what changed is in
+[releases page](https://github.com/adiacov/ai-web-assist/releases) (they are not published to
+PyPI); what changed is in
 [CHANGELOG.md](CHANGELOG.md).
 
 From awa itself (works when awa was installed with uv or pipx):
@@ -193,7 +194,7 @@ step. Design documents (spec, plan, decisions) live in `specs/`, made with
 - A pinned "status" file or dashboard of progress data
 - Access tokens for the local URL, or multi-user use
 - Packaging as a Claude Code plugin
-- Publishing to PyPI (releases are on GitHub only), and pre-release versions
+- Pre-release versions (e.g. `v1.0.0-rc1`)
 
 ## License
 
