@@ -246,6 +246,7 @@ const nearBottom = () => { const m = $("msgs"); return m.scrollHeight - m.scroll
 const scrollChat = (force = false) => { if (force || nearBottom()) $("msgs").scrollTop = $("msgs").scrollHeight; };
 
 function addMsg(role, text, tools = []) {
+  $("msgs").querySelector(":scope > .notice")?.remove();
   const div = document.createElement("div");
   div.className = "msg " + role;
   if (role === "assistant") {
@@ -353,7 +354,38 @@ $("input").addEventListener("keydown", (e) => {
 });
 $("stopBtn").addEventListener("click", () => fetch("/api/stop", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }));
 
+function renderHistory(messages) {
+  $("msgs").replaceChildren();
+  for (const m of messages) addMsg(m.role, m.text, m.tools || []);
+  if (!messages.length) $("msgs").innerHTML = `<p class="notice">Ask Claude about this project. It can read and edit the files you see here.</p>`;
+  scrollChat(true);
+}
+
+async function loadHistory() {
+  const h = await (await fetch("/api/history")).json();
+  renderHistory(h.messages);
+  return h.busy;
+}
+
+// A reply started before a reload (or in another tab) is still running: show that, then reload the history.
+async function followRunningReply() {
+  setBusy(true, "Claude is still working on a previous message…");
+  $("sendBtn").disabled = true;
+  while ((await (await fetch("/api/history")).json()).busy) await new Promise((r) => setTimeout(r, 2000));
+  await loadHistory();
+  setBusy(false);
+}
+
+$("newBtn").addEventListener("click", async () => {
+  if (!confirm("Start a new Claude session?\n\nThe chat log is archived in .ai-web-assist/archive/. Project files are kept.")) return;
+  const r = await fetch("/api/new", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  if (!r.ok) return addMsg("error", "Claude is still working; stop it first.");
+  renderHistory([]);
+});
+
 async function initChat() {
+  const running = await loadHistory();
+  if (running) followRunningReply();
   $("input").focus();
 }
 

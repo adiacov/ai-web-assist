@@ -208,3 +208,48 @@ def test_chat_unknown_session_explains(server, fake_claude):
     status, events = server.chat("hi")
     errors = " | ".join(e["v"] for e in events if e["t"] == "error")
     assert "No conversation found" in errors and "New session" in errors
+
+
+# --- US3: resume and new session -----------------------------------------------------------------
+
+
+def test_next_chat_resumes_session(server, fake_claude):
+    server.chat("first")
+    sid = server.get_json("/api/history")[1]["session_id"]
+    assert sid
+    server.chat("second")
+    argv = fake_claude.calls()[1]["argv"]
+    assert argv[argv.index("--resume") + 1] == sid
+
+
+def test_history_survives_restart(server, fake_claude):
+    server.chat("remember me")
+    before = server.get_json("/api/history")[1]
+    server.restart()
+    after = server.get_json("/api/history")[1]
+    assert after["messages"] == before["messages"] and after["session_id"] == before["session_id"]
+    server.chat("again")
+    assert "--resume" in fake_claude.calls()[-1]["argv"]
+
+
+def test_new_session_archives(server, fake_claude, project):
+    server.chat("old topic")
+    resp, raw = server.post("/api/new")
+    assert resp.status == 200 and json.loads(raw) == {"ok": True}
+    history = server.get_json("/api/history")[1]
+    assert history == {"session_id": None, "messages": [], "busy": False}
+    archives = list((project / ".ai-web-assist" / "archive").glob("chat-*.json"))
+    assert len(archives) == 1
+    assert json.loads(archives[0].read_text())["messages"][0]["text"] == "old topic"
+    server.chat("new topic")
+    assert "--resume" not in fake_claude.calls()[-1]["argv"]
+
+
+def test_new_session_refused_while_busy(server, fake_claude):
+    fake_claude.set(delay=0.05)
+    t = threading.Thread(target=server.chat, args=("busy",))
+    t.start()
+    assert wait_for(lambda: is_busy(server))
+    resp, raw = server.post("/api/new")
+    assert resp.status == 409 and json.loads(raw)["error"] == "busy"
+    t.join(10)

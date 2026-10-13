@@ -85,9 +85,9 @@ filtering, config loading and stream parsing, with a fake `claude` for chat test
 
 **Independent Test**: after a chat, a new server on the same project returns the same history and passes `--resume <id>`; `/api/new` archives.
 
-- [ ] T026 [P] [US3] Write `tests/test_server.py` (part 3): `/api/history` after a chat returns messages + `session_id`; the next chat passes `--resume <id>` to claude (via the fake record); `/api/new` archives `chat.json` and the next chat has no `--resume`; `/api/new` while busy → 409; a restarted server (new instance, same project) returns the same history
-- [ ] T027 [US3] Add `POST /api/new` to `src/ai_web_assist/server.py` and make sure the `session_id` from the init event is saved as soon as it arrives
-- [ ] T028 [US3] Add to `src/ai_web_assist/static/app.js`: load history on start (render tools), a New session button with confirm, disabled while busy
+- [X] T026 [P] [US3] Write `tests/test_server.py` (part 3): `/api/history` after a chat returns messages + `session_id`; the next chat passes `--resume <id>` to claude (via the fake record); `/api/new` archives `chat.json` and the next chat has no `--resume`; `/api/new` while busy → 409; a restarted server (new instance, same project) returns the same history
+- [X] T027 [US3] Add `POST /api/new` to `src/ai_web_assist/server.py` and make sure the `session_id` from the init event is saved as soon as it arrives
+- [X] T028 [US3] Add to `src/ai_web_assist/static/app.js`: load history on start (render tools), a New session button with confirm, disabled while busy
 
 **Checkpoint**: tests green → commit `feat(us3): session resume and new-session archive`
 

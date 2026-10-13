@@ -211,7 +211,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_error_json(404, "not found")
         getattr(self, route)(data)
 
-    POST_ROUTES = {"/api/chat": "post_chat", "/api/stop": "post_stop"}
+    POST_ROUTES = {"/api/chat": "post_chat", "/api/stop": "post_stop", "/api/new": "post_new"}
 
     def post_chat(self, data: dict) -> None:
         message = data.get("message")
@@ -243,6 +243,16 @@ class Handler(BaseHTTPRequestHandler):
             emit({"t": "done"})
         finally:
             self.app.chat_lock.release()
+
+    def post_new(self, data: dict) -> None:
+        # Holding the chat lock means no reply can start while the log is being archived.
+        if not self.app.chat_lock.acquire(blocking=False):
+            return self.send_error_json(409, "busy")
+        try:
+            self.app.store.archive()
+        finally:
+            self.app.chat_lock.release()
+        self.send_json({"ok": True})
 
     def post_stop(self, data: dict) -> None:
         self.app.stop()
