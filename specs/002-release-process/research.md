@@ -60,7 +60,7 @@ GitHub releases of the Actions used.
 
 ## CI / release workflow
 
-- **Decision**: `actions/checkout@v7`, `astral-sh/setup-uv@v10`, `uv run --group dev pytest`,
+- **Decision**: `actions/checkout@v7`, `astral-sh/setup-uv@v10.2.0` (no moving major tag is published), `uv run --group dev pytest`,
   `uv build`; publish with the runner's preinstalled `gh release create` and `GITHUB_TOKEN`
   (`permissions: contents: write`). Release notes: the `## [X.Y.Z]` section of CHANGELOG.md,
   extracted with awk. Tag/version check compares `${GITHUB_REF_NAME#v}` with `__version__`.

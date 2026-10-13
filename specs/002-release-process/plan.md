@@ -19,7 +19,7 @@ tests, builds and publishes the release with `gh release create`.
 **Language/Version**: Python >= 3.11
 
 **Primary Dependencies**: none at runtime (stdlib: `argparse`, `urllib.request`, `json`,
-`subprocess`). Build: hatchling (dynamic version). CI: GitHub Actions, `astral-sh/setup-uv@v10`,
+`subprocess`). Build: hatchling (dynamic version). CI: GitHub Actions, `astral-sh/setup-uv@v10.2.0` (no moving major tag is published),
 `actions/checkout@v7`, preinstalled `gh` CLI.
 
 **Storage**: N/A (no new state files)
