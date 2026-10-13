@@ -75,3 +75,19 @@ def test_port_precedence(tmp_path):
     config = load_config(tmp_path)
     assert cli.choose_port(None, config) == 9100
     assert cli.choose_port(9200, config) == 9200
+
+
+@pytest.mark.parametrize("argv", [["version"], ["versions"], ["update", "--to", "0.1.0", "--yes"]])
+def test_subcommands_are_routed(monkeypatch, argv):
+    seen = []
+    monkeypatch.setattr(cli, "run_command", lambda name, rest: seen.append((name, rest)) or 0)
+    assert cli.main(argv) == 0
+    assert seen == [(argv[0], argv[1:])]
+
+
+def test_folder_named_like_a_command_opens_with_a_path(monkeypatch, tmp_path):
+    (tmp_path / "version").mkdir()
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(cli, "run_command", lambda *a: pytest.fail("routed to a subcommand"))
+    monkeypatch.setattr(cli.shutil, "which", lambda name: None)  # stop before starting a server
+    assert cli.main(["./version"]) == 1

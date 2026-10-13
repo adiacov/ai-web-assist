@@ -15,6 +15,7 @@ from ai_web_assist.config import Config, ConfigError, load_config
 from ai_web_assist.files import Workspace
 from ai_web_assist.server import App, make_server
 from ai_web_assist.state import ChatStore, ensure_state_dir
+from ai_web_assist.update import COMMANDS, run as run_command
 
 PORT_ATTEMPTS = 20
 T = TypeVar("T")
@@ -25,6 +26,8 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         prog="awa",
         description="Open a folder as a local browser workspace: file tree, rendered viewer, "
                     "and a chat with Claude Code that reads and writes the same files.",
+        epilog="other commands: `awa version`, `awa versions`, `awa update [--to VERSION] [--yes]`. "
+               "To open a folder with one of these names, use `awa ./version`.",
     )
     p.add_argument("path", nargs="?", default=".", help="project folder (default: current folder)")
     p.add_argument("--port", type=int, help="first port to try (default: config 'port' or 8765)")
@@ -49,6 +52,9 @@ def bind_first_free(factory: Callable[[int], T], port: int, attempts: int = PORT
 
 
 def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] in COMMANDS:
+        return run_command(argv[0], argv[1:])
     args = parse_args(argv)
     root = Path(args.path).expanduser()
     if not root.is_dir():
