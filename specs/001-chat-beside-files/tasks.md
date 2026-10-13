@@ -121,10 +121,10 @@ filtering, config loading and stream parsing, with a fake `claude` for chat test
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T033 [P] Write `README.md`: what it is, requirements, install (`uv tool install git+…`, `pipx`), usage (`awa [PATH] [--port] [--no-browser]`), config (link to the example), state folder and git, safety (edits auto-accepted, Bash allowed, loopback-only plus Host/Origin guards, single user, `permission_mode = "manual"`/`plan` for read-only), troubleshooting, development (tests), Parked list
-- [ ] T034 Run quickstart.md §1–§2: `uv run --group dev pytest -q`; `uv tool install --force .`; `awa --version`; `ai-web-assist --version`; record the output
-- [ ] T035 Run quickstart.md §3–§5 in `~/Documents/private/projects/learn-code/ai-path/` (do not commit anything there; remove test files created by the chat afterwards); record evidence in `specs/001-chat-beside-files/verification.md`
-- [ ] T036 Mark the tasks done in this file; final commit `docs: verification evidence and README`
+- [X] T033 [P] Write `README.md`: what it is, requirements, install (`uv tool install git+…`, `pipx`), usage (`awa [PATH] [--port] [--no-browser]`), config (link to the example), state folder and git, safety (edits auto-accepted, Bash allowed, loopback-only plus Host/Origin guards, single user, `permission_mode = "manual"`/`plan` for read-only), troubleshooting, development (tests), Parked list
+- [X] T034 Run quickstart.md §1–§2: `uv run --group dev pytest -q`; `uv tool install --force .`; `awa --version`; `ai-web-assist --version`; record the output
+- [X] T035 Run quickstart.md §3–§5 in `~/Documents/private/projects/learn-code/ai-path/` (do not commit anything there; remove test files created by the chat afterwards); record evidence in `specs/001-chat-beside-files/verification.md`
+- [X] T036 Mark the tasks done in this file; final commit `docs: verification evidence and README`
 
 ---
 

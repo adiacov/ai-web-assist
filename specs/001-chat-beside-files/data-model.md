@@ -83,7 +83,7 @@ deleted by the app.
 
 ```
 .ai-web-assist/
-├── .gitignore          # "*", "!.gitignore", "!config.toml" (created on first run)
+├── .gitignore          # "*", "!config.toml" (created on first run; ignores itself)
 ├── config.toml         # optional, user-owned, committable
 ├── chat.json           # current session
 ├── claude-stderr.log   # stderr of the last Claude run

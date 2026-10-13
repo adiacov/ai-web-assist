@@ -9,7 +9,7 @@ from pathlib import Path
 
 from ai_web_assist.config import STATE_DIR_NAME
 
-GITIGNORE = "*\n!.gitignore\n!config.toml\n"
+GITIGNORE = "# Created by ai-web-assist: keep chat state out of git, allow committing config.toml.\n*\n!config.toml\n"
 
 
 def ensure_state_dir(root: Path) -> Path:

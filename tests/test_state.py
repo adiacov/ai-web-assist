@@ -47,8 +47,8 @@ def test_corrupt_state(tmp_path):
 def test_ensure_state_dir(tmp_path):
     d = ensure_state_dir(tmp_path)
     assert d == tmp_path / ".ai-web-assist"
-    lines = (d / ".gitignore").read_text().split()
-    assert lines == ["*", "!.gitignore", "!config.toml"]
+    lines = [l for l in (d / ".gitignore").read_text().splitlines() if not l.startswith("#")]
+    assert lines == ["*", "!config.toml"]  # the .gitignore ignores itself: no untracked folder in git status
 
 
 def test_ensure_state_dir_keeps_existing_gitignore(tmp_path):

@@ -116,7 +116,7 @@ not from memory.
   (temp file + `os.replace`). New session moves it to
   `.ai-web-assist/archive/chat-YYYYMMDD-HHMMSS.json`. Claude's stderr from the last run goes to
   `.ai-web-assist/claude-stderr.log`. On first run the app creates
-  `.ai-web-assist/.gitignore` containing `*`, `!.gitignore`, `!config.toml`. A corrupt
+  `.ai-web-assist/.gitignore` containing `*` and `!config.toml`. It ignores itself too, so a project without a config shows no untracked folder in `git status` (changed during verification on 2026-10-13). A corrupt
   `chat.json` is renamed to `chat.corrupt-<ts>.json` and the app starts with empty state.
 - **Rationale**: plain inspectable files (Principle III). Archives are never deleted.
 

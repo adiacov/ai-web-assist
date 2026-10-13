@@ -231,7 +231,7 @@ panel and the message box. The choices persist in that browser.
   `acceptEdits`; allowed tools = Read, Edit, Write, Glob, Grep, WebFetch, WebSearch, Bash;
   model = Claude's default; port = 8765.
 - **FR-027**: All chat state MUST live in `.ai-web-assist/` in the project; the app MUST create a
-  `.gitignore` there that ignores everything except `config.toml` and the `.gitignore` itself.
+  `.gitignore` there that ignores everything except `config.toml` (including itself, so an unconfigured project's `git status` stays clean).
 - **FR-028**: The UI MUST work with no internet connection (no assets loaded from other origins).
 
 **Display settings**

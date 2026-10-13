@@ -14,7 +14,7 @@ the HTTP API with a fake `claude`.
 ## 2. Install as a user would
 
 ```bash
-uv tool install --force .            # local checkout
+uv tool install --force --reinstall .   # local checkout
 # or, once published:
 uv tool install git+https://github.com/<user>/ai-web-assist
 awa --version && ai-web-assist --version
@@ -41,7 +41,7 @@ Expected:
 | Edit the open file in another editor | the viewer refreshes and keeps its scroll position | FR-012 |
 | Ctrl+C, run `awa` again, reload | history is shown; "what file did you create?" is answered correctly | US3, FR-018 |
 | New session → confirm | chat clears; `.ai-web-assist/archive/chat-*.json` exists | FR-020 |
-| `cat .ai-web-assist/.gitignore` | `*`, `!.gitignore`, `!config.toml` | FR-027 |
+| `cat .ai-web-assist/.gitignore`; `git status` | `*`, `!config.toml`; no untracked `.ai-web-assist/` | FR-027 |
 | Second `awa` in another folder | uses port 8766 | FR-004 |
 
 ## 4. Safety spot checks
