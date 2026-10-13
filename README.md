@@ -28,8 +28,8 @@ uv tool install git+https://github.com/adiacov/ai-web-assist
 pipx install git+https://github.com/adiacov/ai-web-assist
 ```
 
-This installs two identical commands: `awa` and `ai-web-assist`.
-Update with `uv tool upgrade ai-web-assist` (or `pipx upgrade ai-web-assist`).
+This installs the latest code on `main` and two identical commands: `awa` and `ai-web-assist`.
+To install a released version instead (recommended), see [Versions and updates](#versions-and-updates).
 
 ## Usage
 
@@ -51,6 +51,45 @@ Tips:
 - Link straight to a file: `http://127.0.0.1:8765/#docs/plan.md`.
 - The gear icon sets the theme (system/light/dark) and font size. Drag the chat's left border,
   or the top of the message box, to resize them; double-click a border to reset it.
+
+## Versions and updates
+
+Releases are tagged `vX.Y.Z` and listed on the
+[releases page](https://github.com/adiacov/ai-web-assist/releases); what changed is in
+[CHANGELOG.md](CHANGELOG.md).
+
+From awa itself (works when awa was installed with uv or pipx):
+
+```bash
+awa version                  # installed version, and whether a newer release exists
+awa versions                 # all releases, newest first; * marks the installed one
+awa update                   # update to the latest release
+awa update --to v0.1.0       # move to a given release; asks first if it is older (a downgrade)
+awa update --to v0.1.0 --yes # downgrade without the question (e.g. in scripts)
+awa --version                # just the installed version, no network
+```
+
+After an update, restart any running awa servers: they keep the old version until then.
+To open a folder that is literally named `version`, `versions` or `update`, write it as a
+path: `awa ./version`.
+
+The same with the installer directly (also for versions that don't have `awa update` yet,
+such as 0.1.0):
+
+```bash
+# install or switch to a specific version (newer or older)
+uv tool install --force git+https://github.com/adiacov/ai-web-assist@v0.2.0
+pipx install --force git+https://github.com/adiacov/ai-web-assist@v0.2.0
+
+# see what is installed
+uv tool list            # or: pipx list
+```
+
+`uv tool upgrade ai-web-assist` / `pipx upgrade ai-web-assist` do not move a pinned install to
+a newer tag; use `awa update` or the commands above.
+
+If awa was installed some other way (for example from a checkout), `awa update` changes nothing
+and prints the command to run.
 
 ## Configuration (optional)
 
@@ -126,6 +165,21 @@ uv run awa                       # run from the checkout
 uv tool install --force --reinstall .   # install your local version
 ```
 
+### Releasing (maintainer)
+
+1. Set the new version in `src/ai_web_assist/__init__.py` (the only place it is defined;
+   use [Semantic Versioning](https://semver.org)).
+2. In `CHANGELOG.md`, move the `Unreleased` notes into a new `## [X.Y.Z] - YYYY-MM-DD` section
+   and update the compare links at the bottom.
+3. Commit on `main`: `git commit -am "release: vX.Y.Z"`.
+4. Tag and push: `git tag vX.Y.Z && git push origin main vX.Y.Z`.
+
+The [Release workflow](.github/workflows/release.yml) then checks that the tag matches the
+version, runs the tests, builds the wheel and sdist, and publishes the GitHub release with that
+version's changelog section as notes. If any step fails, nothing is published: fix it, delete
+the tag (`git push --delete origin vX.Y.Z && git tag -d vX.Y.Z`) and tag again. Tests also run
+on every push and pull request ([CI workflow](.github/workflows/ci.yml)).
+
 The runtime is Python standard library only. Front-end libraries (marked, DOMPurify, highlight.js)
 are vendored in `src/ai_web_assist/static/vendor/` (see `LICENSES.md` there); there is no build
 step. Design documents (spec, plan, decisions) live in `specs/`, made with
@@ -139,6 +193,7 @@ step. Design documents (spec, plan, decisions) live in `specs/`, made with
 - A pinned "status" file or dashboard of progress data
 - Access tokens for the local URL, or multi-user use
 - Packaging as a Claude Code plugin
+- Publishing to PyPI (releases are on GitHub only), and pre-release versions
 
 ## License
 
