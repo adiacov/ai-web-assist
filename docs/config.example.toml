@@ -1,0 +1,33 @@
+# Copy to <your project>/.ai-web-assist/config.toml. Every key is optional.
+
+# Name shown in the page header and the browser tab (default: the folder name).
+title = "My Project"
+
+# Show only these folders (project-relative). Default: the whole project.
+# include = ["docs", "notes"]
+
+# Extra names or glob patterns to hide, matched against each file/folder name.
+# Hidden entries (starting with "."), .git, node_modules, target, dist, build,
+# __pycache__, .venv and venv are always hidden.
+# exclude = ["*.log", "tmp"]
+
+# How much Claude may do without asking. In this UI nobody can answer permission prompts,
+# so actions that would need approval are refused.
+#   acceptEdits (default): file edits allowed; other tools only if listed in allowed_tools
+#   plan: read-only planning, no edits
+#   manual / dontAsk / auto / bypassPermissions: see `claude --help`
+permission_mode = "acceptEdits"
+
+# Tools Claude may use without asking. Remove "Bash" to stop it from running commands.
+allowed_tools = ["Read", "Edit", "Write", "Glob", "Grep", "WebFetch", "WebSearch", "Bash"]
+
+# Claude model alias or full name; empty means Claude Code's default.
+model = ""
+
+# First port to try; the next 19 are tried if it is busy. `awa --port N` overrides it.
+port = 8765
+
+# Extra instructions for Claude, appended to the built-in workspace instructions.
+prompt = """
+Follow the conventions in AGENTS.md.
+"""

@@ -253,3 +253,45 @@ def test_new_session_refused_while_busy(server, fake_claude):
     resp, raw = server.post("/api/new")
     assert resp.status == 409 and json.loads(raw)["error"] == "busy"
     t.join(10)
+
+
+# --- US4: per-project config ------------------------------------------------------------------------
+
+
+def write_config(project, text):
+    (project / ".ai-web-assist" / "config.toml").write_text(text)
+
+
+def test_config_title_include_exclude(server, project):
+    (project / "docs" / "draft.tmp").write_text("x")
+    (project / "notes").mkdir()
+    (project / "notes" / "n.md").write_text("n")
+    write_config(project, 'title = "My Course"\ninclude = ["docs"]\nexclude = ["*.tmp"]\n')
+    server.restart()
+    assert server.get_json("/api/config")[1]["title"] == "My Course"
+    assert "<title>My Course</title>" in server.get("/")[1].decode()
+    assert [f["path"] for f in server.get_json("/api/tree")[1]["files"]] == ["docs/plan.md"]
+    assert server.get_json("/api/file?path=README.md")[0] == 404
+    assert server.get_json("/api/file?path=docs/draft.tmp")[0] == 404
+    assert server.get_json("/api/file?path=docs/plan.md")[0] == 200
+
+
+def test_config_claude_settings(server, fake_claude, project):
+    write_config(project, 'permission_mode = "plan"\nallowed_tools = ["Read", "Grep"]\n'
+                          'model = "haiku"\nprompt = "Follow AGENTS.md strictly."\n')
+    server.restart()
+    server.chat("hi")
+    argv = fake_claude.calls()[0]["argv"]
+    assert argv[argv.index("--permission-mode") + 1] == "plan"
+    assert argv[argv.index("--allowedTools") + 1] == "Read Grep"
+    assert argv[argv.index("--model") + 1] == "haiku"
+    system = argv[argv.index("--append-system-prompt") + 1]
+    assert "AI Web Assist" in system and system.endswith("Project instructions:\nFollow AGENTS.md strictly.")
+
+
+def test_tool_summaries_relative_with_include(server, fake_claude, project):
+    write_config(project, 'include = ["docs"]\n')
+    server.restart()
+    (project / "a.md").write_text("x")
+    status, events = server.chat("hi")
+    assert {"t": "tool", "name": "Read", "summary": "a.md"} in events  # project-relative, not include-relative

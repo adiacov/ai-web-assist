@@ -99,9 +99,9 @@ filtering, config loading and stream parsing, with a fake `claude` for chat test
 
 **Independent Test**: config with title + `include` + `exclude` + `prompt`; `/api/config` title, the tree limited, and claude argv contains the prompt text and the configured flags.
 
-- [ ] T029 [P] [US4] Write `tests/test_server.py` (part 4, config): the configured title in `/` and `/api/config`; `include`/`exclude` applied to the tree and file access; `permission_mode`, `allowed_tools`, `model`, and the extra prompt appear in the fake claude argv
-- [ ] T030 [US4] Wire config end to end in `src/ai_web_assist/cli.py` and `src/ai_web_assist/server.py` (config port as the default; the `--port` override) and fix any gaps found by T029
-- [ ] T031 [P] [US4] Add an example config `docs/config.example.toml` mirroring `contracts/config.md`
+- [X] T029 [P] [US4] Write `tests/test_server.py` (part 4, config): the configured title in `/` and `/api/config`; `include`/`exclude` applied to the tree and file access; `permission_mode`, `allowed_tools`, `model`, and the extra prompt appear in the fake claude argv
+- [X] T030 [US4] Wire config end to end in `src/ai_web_assist/cli.py` and `src/ai_web_assist/server.py` (config port as the default; the `--port` override) and fix any gaps found by T029
+- [X] T031 [P] [US4] Add an example config `docs/config.example.toml` mirroring `contracts/config.md`
 
 **Checkpoint**: tests green → commit `feat(us4): per-project config`
 
